@@ -7,6 +7,8 @@ pipeline {
     }
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        ODC_INSTALL = 'DP-Check'  // set once, use everywhere
+        ODC_DATA_DIR = './odc-data'
     }
     stages {
         stage('Clean Workspace') {
@@ -14,12 +16,14 @@ pipeline {
                 cleanWs()
             }
         }
+
         stage('Checkout from Git') {
             steps {
                 git branch: 'main', url: 'https://github.com/lightyagamisum/Book-My-Show.git'
-                sh 'ls -la'  // Verify files after checkout
+                sh 'ls -la'
             }
         }
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
@@ -30,6 +34,7 @@ pipeline {
                 }
             }
         }
+
         stage('Quality Gate') {
             steps {
                 script {
@@ -37,14 +42,15 @@ pipeline {
                 }
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh '''
                 cd bookmyshow-app
-                ls -la  # Verify package.json exists
+                ls -la
                 if [ -f package.json ]; then
-                    rm -rf node_modules package-lock.json  # Remove old dependencies
-                    npm install  # Install fresh dependencies
+                    rm -rf node_modules package-lock.json
+                    npm install
                 else
                     echo "Error: package.json not found in bookmyshow-app!"
                     exit 1
@@ -52,19 +58,24 @@ pipeline {
                 '''
             }
         }
-      stage('OWASP FS Scan') {
-    steps {
-        dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit --format XML --out reports --failOnCVSS 10.0', odcInstallation: 'DP-Check'
-        dependencyCheckPublisher pattern: '**/reports/dependency-check-report.xml'
-    }
-}
 
+        stage('OWASP FS Scan') {
+            steps {
+                echo "Running OWASP Dependency-Check..."
+                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --data ${ODC_DATA_DIR}", odcInstallation: "${ODC_INSTALL}"
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
         }
+
         stage('Trivy FS Scan') {
             steps {
+                echo "Running Trivy file system scan..."
                 sh 'trivy fs . > trivyfs.txt'
             }
         }
+    }
+}
+
         stage('Docker Build & Push') {
             steps {
                 script {
