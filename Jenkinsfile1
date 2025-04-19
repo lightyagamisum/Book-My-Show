@@ -109,7 +109,6 @@ pipeline {
                 docker logs bms
                 '''
             }
-        }
     }
     post {
         always {
