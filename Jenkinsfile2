@@ -1,5 +1,4 @@
 (with K8S Stage)
-
 pipeline {
     agent any
 
@@ -13,6 +12,8 @@ pipeline {
         DOCKER_IMAGE = 'vatsal1902/bms:latest'
         EKS_CLUSTER_NAME = 'light-eks'
         AWS_REGION = 'ap-south-1'
+        ODC_INSTALL = 'DP-Check'
+        ODC_DATA_DIR = './odc-data'
     }
 
     stages {
@@ -25,7 +26,7 @@ pipeline {
         stage('Checkout from Git') {
             steps {
                 git branch: 'main', url: 'https://github.com/lightyagamisum/Book-My-Show.git'
-                sh 'ls -la'  // Verify files after checkout
+                sh 'ls -la'
             }
         }
 
@@ -53,10 +54,10 @@ pipeline {
             steps {
                 sh '''
                 cd bookmyshow-app
-                ls -la  # Verify package.json exists
+                ls -la
                 if [ -f package.json ]; then
-                    rm -rf node_modules package-lock.json  # Remove old dependencies
-                    npm install  # Install fresh dependencies
+                    rm -rf node_modules package-lock.json
+                    npm install
                 else
                     echo "Error: package.json not found in bookmyshow-app!"
                     exit 1
@@ -65,10 +66,10 @@ pipeline {
             }
         }
 
-       stage('OWASP FS Scan') {
+        stage('OWASP FS Scan') {
             steps {
                 echo "Running OWASP Dependency-Check..."
-                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --data ${ODC_DATA_DIR}", odcInstallation: "${ODC_INSTALL}"
+                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --data ${env.ODC_DATA_DIR}", odcInstallation: "${env.ODC_INSTALL}"
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
