@@ -65,9 +65,10 @@ pipeline {
             }
         }
 
-        stage('OWASP FS Scan') {
+       stage('OWASP FS Scan') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                echo "Running OWASP Dependency-Check..."
+                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --data ${ODC_DATA_DIR}", odcInstallation: "${ODC_INSTALL}"
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
