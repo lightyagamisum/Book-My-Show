@@ -1,15 +1,18 @@
 (without K8S Stage)
 pipeline {
     agent any
+
     tools {
         jdk 'jdk17'
         nodejs 'node23'
     }
+
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
         ODC_INSTALL = 'DP-Check'  // set once, use everywhere
         ODC_DATA_DIR = './odc-data'
     }
+
     stages {
         stage('Clean Workspace') {
             steps {
@@ -73,8 +76,6 @@ pipeline {
                 sh 'trivy fs . > trivyfs.txt'
             }
         }
-    }
-}
 
         stage('Docker Build & Push') {
             steps {
@@ -91,6 +92,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to Container') {
             steps {
                 sh ''' 
@@ -109,7 +111,9 @@ pipeline {
                 docker logs bms
                 '''
             }
+        }
     }
+
     post {
         always {
             emailext attachLog: true,
@@ -122,3 +126,4 @@ pipeline {
         }
     }
 }
+
